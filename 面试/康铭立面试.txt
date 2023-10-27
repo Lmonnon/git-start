@@ -1,0 +1,14 @@
+自我介绍
+简历里面的个人技能
+Nginx怎么使用的
+JVM类加载机制
+JVM类加载过程
+MVC执行流程
+MVC中央控制器是怎么找到对应Mapping的
+Redis数据类型
+介绍JAVA里面用到了哪些数据结构
+冒泡算法的过程
+为什么要用MQ，优点是什么
+MQ如果找不到你的方法怎么办
+SpringBoot是怎么配置的
+用到了SpringCloudAlibaba哪些组件

@@ -1,0 +1,788 @@
+### 	1.springmvc执行流程，注解
+
+#### 流程图
+
+![img](https://upload-images.jianshu.io/upload_images/17497804-d28c03332d41ce2f.png?imageMogr2/auto-orient/strip|imageView2/2/format/webp)
+
+```
+1   用户发起请求到前端控制器（DispatcherServlet），该控制器会过滤出哪些请求可以访问Servlet、哪些不能访问。就是url-pattern的作用，并且会加载springmvc.xml配置文件。
+ 2   前端控制器会找到处理器映射器（HandlerMapping），通过HandlerMapping完成url到controller映射的组件，简单来说，就是将在springmvc.xml中配置的或者注解的url与对应的处理类找到并进行存储，用map<url,handler>这样的方式来存储。
+ 3   HandlerMapping有了映射关系，并且找到url对应的处理器，HandlerMapping就会将其处理器（Handler）返回，在返回前，会加上很多拦截器。
+ 4   DispatcherServlet拿到Handler后，找到HandlerAdapter（处理器适配器），通过它来访问处理器，并执行处理器。
+ 5   执行处理器
+ 6   处理器会返回一个ModelAndView对象给HandlerAdapter
+ 7  通过HandlerAdapter将ModelAndView对象返回给前端控制器(DispatcherServlet)
+ 8  前端控制器请求视图解析器(ViewResolver)去进行视图解析，根据逻辑视图名解析成真正的视图(jsp)，其实就是将ModelAndView对象中存放视图的名称进行查找，找到对应的页面形成视图对象
+ 9 返回视图对象到前端控制器。
+ 10 视图渲染，就是将ModelAndView对象中的数据放到request域中，用来让页面加载数据的。
+ 11  通过第8步，通过名称找到了对应的页面，通过第10步，request域中有了所需要的数据，那么就能够进行视图渲染了。最后将其返回即可。
+```
+
+#### 注解
+
+```
+1.@Controller 控制器 负责处理由DispatcherServlet 分发的请求
+2.@RestController   （@RestController = @Controller + @ResponseBody）将返回的数据结构转换为 JSON 格式
+3.@RequestMapping  配置处理请求的路径
+
+4. @RequestBody   将前端传过来的json格式的参数映射到对象里
+   5.@ResponseBody  返回json格式的数据
+   6.@PathVariable  要用来获取 URL 参数,跟@RequestMapping（"show/{id}/{name}"）结合起来用
+   7.@RequestParam  前端传过来的参数名字为name，后端想用nm接收这个参数，需要在nm前加上这个注解
+   8.@CookieValue  获取cookie值
+   9.@RequestHeader  获取请求头
+   10.@PostMapping  只接收post请求
+   11.@GetMapping 只接收get请求
+   12.@CorssOrigin 解决跨域
+```
+
+### 2.ioc aop
+
+```
+IOC：控制反转，是一种设计模式。一层含义是控制权的转移：由传统的在程序中控制依赖转移到由容器来控制；第二层是 依赖注入 DI：将相互依赖的对象分离，在spring配置文件中描述他们的依赖关系，调用setter方法来注入（反射的话太消耗性能）。他们的依赖关系只在使用的时候才建立。简单来说就是不需要总是NEW一个对象了，只需要一个或多个对象（由你定义的策略决定，一般是单例），统一由容器进行管理。多例模式，使用@Scope(value="prototype")
+```
+
+```
+AOP：面向切面，是一种编程思想，是对OOP面向对象的补充和完善。将系统中非核心的业务提取出来，进行单独处理。比如事务、日志和安全等。这个简单来说就是可以在一段程序之前或者之后做一些事。 实现AOP的技术，主要分为两大类：一是采用动态代理技术，利用截取消息的方式，对该消息进行装饰，以取代原有对象行为的执行（jdk动态代理：必须至少实现一个接口，底层利用反射机制，效率较低；cglib动态代理：原理是使用ASM字节码技术对指定的业务类生成一个子类，并覆盖业务方法实现代理，采用继承的方式，所以不能对final修改的类进行代理）；二是采用静态代理的方式，在代码中显示地实现一个业务实现类的指定代理，在代理类中对同名的业务方法进行包装（不修改原有的业务代码），用户通过代理类调用被包装过的业务方法，但会导致代码冗余。目前这几种代理方式并没有高低之分，只是应用的场景不同。
+
+它利用一种称为“横切”的技术，剖解开封装的对象内部，并将那些影响了多个类的公共行为封装到一个可重用模块，并将其名为“Aspect”，即方面。所谓“方面”，简单地说，就是将那些与业务无关，却为业务模块所共同调用的逻辑或责任封装起来，便于减少系统的重复代码，降低模块间的耦合度，并有利于未来的可操作性和可维护性。
+
+(1)Aspect(切面):通常是一个类，里面可以定义切入点和通知
+(2)JointPoint(连接点):程序执行过程中明确的点，一般是方法的调用
+(3)Advice(通知):AOP在特定的切入点上执行的增强处理，有before,after,afterReturning,afterThrowing,around
+(4)Pointcut(切入点):就是带有通知的连接点，在程序中主要体现为书写切入点表达式
+(5)AOP代理：AOP框架创建的对象，代理就是目标对象的加强。Spring中的AOP代理可以使JDK动态代理，也可以是CGLIB代理，前者基于接口，后者基于子类
+```
+
+### 3 数据库事务和spring事务
+
+https://www.cnblogs.com/mseddl/p/11577846.html
+
+```
+事务的特性
+原子性（Atomicity）：事务是一个原子操作，由一系列动作组成。事务的原子性确保动作要么全部完成，要么完全不起作用。
+一致性（Consistency）：一旦事务完成（不管成功还是失败），系统必须确保它所建模的业务处于一致的状态，而不会是部分完成部分失败。在现实中的数据不应该被破坏。
+隔离性（Isolation）：可能有许多事务会同时处理相同的数据，因此每个事务都应该与其他事务隔离开来，防止数据损坏。
+持久性（Durability）：一旦事务完成，无论发生什么系统错误，它的结果都不应该受到影响，这样就能从任何系统崩溃中恢复过来。通常情况下，事务的结果被写到持久化存储器中。
+
+spring事务的配置方式：
+1. 编程式事务管理
+2. 声明式事务管理 声明式事务管理建立在AOP之上，其本质是对方法前后进行拦截，然后在目标方法开始之前创建或者加入一个事务，执行完目标方法之后根据执行的情况提交或者回滚。
+
+@Transactional(propagation=Propagation.REQUIRED)
+指定多个异常类：@Transactional(rollbackFor={RuntimeException.class, Exception.class})
+
+事务的传播机制(7种)
+PROPAGATION_REQUIRED
+Spring默认的传播机制，能满足绝大部分业务需求，如果外层有事务，则当前事务加入到外层事务，一块提交，一块回滚。如果外层没有事务，新建一个事务执行
+PROPAGATION_REQUES_NEW
+该事务传播机制是每次都会新开启一个事务，同时把外层事务挂起，当当前事务执行完毕，恢复上层事务的执行。如果外层没有事务，执行当前新开启的事务即可
+PROPAGATION_SUPPORT
+如果外层有事务，则加入外层事务，如果外层没有事务，则直接使用非事务方式执行。完全依赖外层的事务
+PROPAGATION_NOT_SUPPORT
+该传播机制不支持事务，如果外层存在事务则挂起，执行完当前代码，则恢复外层事务，无论是否异常都不会回滚当前的代码
+PROPAGATION_NEVER
+该传播机制不支持外层事务，即如果外层有事务就抛出异常
+PROPAGATION_MANDATORY
+与NEVER相反，如果外层没有事务，则抛出异常
+PROPAGATION_NESTED
+该传播机制的特点是可以保存状态保存点，当前事务回滚到某一个点，从而避免所有的嵌套事务都回滚，即各自回滚各自的，如果子事务没有把异常吃掉，基本还是会引起全部回滚的。
+
+事务的隔离级别
+```
+
+| 隔离级别                   | 含义                                                         |
+| -------------------------- | ------------------------------------------------------------ |
+| ISOLATION_DEFAULT          | 使用后端数据库默认的隔离级别                                 |
+| ISOLATION_READ_UNCOMMITTED | 允许读取尚未提交的更改。可能导致脏读、幻读或不可重复读。     |
+| ISOLATION_READ_COMMITTED   | （Oracle 默认级别）允许从已经提交的并发事务读取。可防止脏读，但幻读和不可重复读仍可能会发生。 |
+| ISOLATION_REPEATABLE_READ  | （MYSQL默认级别）对相同字段的多次读取的结果是一致的，除非数据被当前事务本身改变。可防止脏读和不可重复读，但幻读仍可能发生。 |
+| ISOLATION_SERIALIZABLE     | 完全服从ACID的隔离级别，确保不发生脏读、不可重复读和幻影读。这在所有隔离级别中也是最慢的，因为它通常是通过完全锁定当前事务所涉及的数据表来完成的。 |
+
+1. 脏读（Dirty read）
+   脏读发生在一个事务读取了被另一个事务改写但尚未提交的数据时。如果这些改变在稍后被回滚了，那么第一个事务读取的数据就会是无效的。
+2. 不可重复读（Nonrepeatable read）
+   不可重复读发生在一个事务执行相同的查询两次或两次以上，但每次查询结果都不相同时。这通常是由于另一个并发事务在两次查询之间更新了数据。
+
+> 不可重复读重点在修改。
+
+1. 幻读（Phantom reads）
+   幻读和不可重复读相似。当一个事务（T1）读取几行记录后，另一个并发事务（T2）插入了一些记录时，幻读就发生了。在后来的查询中，第一个事务（T1）就会发现一些原来没有的额外记录。
+
+### 4.分布式锁，分布式事务
+
+https://www.php.cn/faq/466231.html
+
+#### 分布式锁
+
+```
+分布式锁的三种实现方式
+1、基于数据库实现分布式锁；
+2、基于缓存（Redis等）实现分布式锁；
+3、基于Zookeeper实现分布式锁。
+从性能角度（从高到低）来看：“缓存方式>Zookeeper方式>=数据库方式”。
+
+1.基于数据库实现分布式锁：
+       1.悲观锁 2乐观锁
+       悲观锁：(当要对数据库中的一条数据进行修改的时候，为了避免同时被其他人修改，最好的办法就是直接对该数据进行加锁以防止并发。这种借助数据库锁机制，在修改数据之前先锁定，再修改的方式)
+       主要分为：排他锁(写锁) 共享锁(读锁)
+       乐观锁：(乐观锁假设认为数据一般情况下不会造成冲突，所以在数据进行提交更新的时候，才会正式对数据的冲突与否进行检测，如果发现冲突了，则让返回用户错误的信息，让用户决定如何去做)
+       主要方式： 1.使用数据版本（Version）记录机制实现，2.同样是在需要乐观锁控制的table中增加一个字段，名称无所谓，字段类型使用时间戳
+2.基于缓存（Redis等）实现分布式锁
+（1）SETNX
+SETNX key val：当且仅当key不存在时，set一个key为val的字符串，返回1；若key存在，则什么都不做，返回0。
+（2）expire
+expire key timeout：为key设置一个超时时间，单位为second，超过这个时间锁会自动释放，避免死锁。
+（3）delete
+delete key：删除key
+实现思想：
+（1）获取锁的时候，使用setnx加锁，并使用expire命令为锁添加一个超时时间，超过该时间则自动释放锁，锁的value值为一个随机生成的UUID，通过此在释放锁的时候进行判断。
+（2）获取锁的时候还设置一个获取的超时时间，若超过这个时间则放弃获取锁。
+（3）释放锁的时候，通过UUID判断是不是该锁，若是该锁，则执行delete进行锁释放。
+3.基于Zookeeper实现分布式锁
+ZooKeeper是一个为分布式应用提供一致性服务的开源组件，它内部是一个分层的文件系统目录树结构，规定同一个目录下只能有一个唯一文件名
+（1）创建一个目录mylock；
+（2）线程A想获取锁就在mylock目录下创建临时顺序节点；
+（3）获取mylock目录下所有的子节点，然后获取比自己小的兄弟节点，如果不存在，则说明当前线程顺序号最小，获得锁；
+（4）线程B获取所有节点，判断自己不是最小节点，设置监听比自己次小的节点；
+（5）线程A处理完，删除自己的节点，线程B监听到变更事件，判断自己是不是最小的节点，如果是则获得锁。
+优点：具备高可用、可重入、阻塞锁特性，可解决失效死锁问题。
+
+缺点：因为需要频繁的创建和删除节点，性能上不如Redis方式。
+```
+
+#### 分布式事务
+
+https://blog.csdn.net/bjweimengshu/article/details/79607522
+
+第一阶段
+
+![img](https://ss.csdn.net/p?https://mmbiz.qpic.cn/mmbiz_png/NtO5sialJZGp2Ny2lbXKGqaNjy4cbhqofektAk1LqqTkgjlFicuYE55XHon5yUguGBSk97Ec7vY62wTibVia7iaTNvg/640?wx_fmt=png)
+
+```
+在XA分布式事务的第一阶段，作为事务协调者的节点会首先向所有的参与者节点发送Prepare请求。
+
+在接到Prepare请求之后，每一个参与者节点会各自执行与事务有关的数据更新，写入Undo Log和Redo Log。如果参与者执行成功，暂时不提交事务，而是向事务协调节点返回“完成”消息。
+
+当事务协调者接到了所有参与者的返回消息，整个分布式事务将会进入第二阶段。
+```
+
+第二阶段
+
+![img](https://ss.csdn.net/p?https://mmbiz.qpic.cn/mmbiz_png/NtO5sialJZGp2Ny2lbXKGqaNjy4cbhqof9zeDNDYh1qjyYTo9ib4wVCu2KrtqIyJBffhkAvLNybmibEMiaSoKGqFKg/640?wx_fmt=png)
+
+```
+在XA分布式事务的第二阶段，如果事务协调节点在之前所收到都是正向返回，那么它将会向所有事务参与者发出Commit请求。
+接到Commit请求之后，事务参与者节点会各自进行本地的事务提交，并释放锁资源。当本地事务完成提交后，将会向事务协调者返回“完成”消息。
+当事务协调者接收到所有事务参与者的“完成”反馈，整个分布式事务完成。
+```
+
+如果有失败的情况
+
+第一阶段
+
+![img](https://ss.csdn.net/p?https://mmbiz.qpic.cn/mmbiz_png/NtO5sialJZGp2Ny2lbXKGqaNjy4cbhqofr3Qjn25OskkZ0Hd1ibMicWpQgTJShGSyAsthibicgNeZHUOx5Sy2Mlwsrw/640?wx_fmt=png)
+
+
+
+第二阶段
+
+![img](https://ss.csdn.net/p?https://mmbiz.qpic.cn/mmbiz_png/NtO5sialJZGp2Ny2lbXKGqaNjy4cbhqofMklXcDS3cVJdWjw4vgibtBiaolQia9NMsT4ibMiaJyHPwwNjr9Db7ljEBug/640?wx_fmt=png)
+
+```
+在XA的第一阶段，如果某个事务参与者反馈失败消息，说明该节点的本地事务执行不成功，必须回滚。
+
+于是在第二阶段，事务协调节点向所有的事务参与者发送Abort请求。接收到Abort请求之后，各个事务参与者节点需要在本地进行事务的回滚操作，回滚操作依照Undo Log来进行。
+
+以上就是XA两阶段提交协议的详细过程。
+```
+
+XA两阶段不足
+
+```
+1.性能问题
+XA协议遵循强一致性。在事务执行过程中，各个节点占用着数据库资源，只有当所有节点准备完毕，事务协调者才会通知提交，参与者提交后释放资源。这样的过程有着非常明显的性能问题。
+2.协调者单点故障问题
+事务协调者是整个XA模型的核心，一旦事务协调者节点挂掉，参与者收不到提交或是回滚通知，参与者会一直处于中间状态无法完成事务。
+3.丢失消息导致的不一致问题。
+在XA协议的第二个阶段，如果发生局部网络问题，一部分事务参与者收到了提交消息，另一部分事务参与者没收到提交消息，那么就导致了节点之间数据的不一致。
+```
+
+如果避免二阶段带来的缺点
+
+```
+1.XA三阶段提交、、
+XA三阶段提交在两阶段提交的基础上增加了CanCommit阶段，并且引入了超时机制。一旦事物参与者迟迟没有接到协调者的commit请求，会自动进行本地commit。这样有效解决了协调者单点故障的问题。但是性能问题和不一致的问题仍然没有根本解决。
+2.MQ事务
+利用消息中间件来异步完成事务的后一半更新，实现系统的最终一致性。这个方式避免了像XA协议那样的性能问题。
+3.TCC事务
+TCC事务是Try、Commit、Cancel三种指令的缩写，其逻辑模式类似于XA两阶段提交，但是实现方式是在代码层面来人为实现。
+```
+
+### 5.Http协议
+
+```
+http是一个超文本传输协议，也是基于TCP/IP协议之上的应用层协议，定义Web客户端如何从Web服务器请求Web页面，以及服务器如何把Web页面传送给客户端　
+HTTP 请求/响应的步骤：
+1. 客户端连接到Web服务器
+一个HTTP客户端，通常是浏览器，与Web服务器的HTTP端口（默认为80）建立一个TCP套接字连接
+2. 发送HTTP请求
+通过TCP套接字，客户端向Web服务器发送一个文本的请求报文，一个请求报文由请求行、请求头部、空行和请求数据4部分组成。
+3. 服务器接受请求并返回HTTP响应
+Web服务器解析请求，定位请求资源。服务器将资源复本写到TCP套接字，由客户端读取。一个响应由状态行、响应头部、空行和响应数据4部分组成。
+4. 释放连接TCP连接
+若connection 模式为close，则服务器主动关闭TCP连接，客户端被动关闭连接，释放TCP连接;若connection 模式为keepalive，则该连接会保持一段时间，在该时间内可以继续接收请求;
+5. 客户端浏览器解析HTML内容
+客户端浏览器首先解析状态行，查看表明请求是否成功的状态代码。然后解析每一个响应头，响应头告知以下为若干字节的HTML文档和文档的字符集。客户端浏览器读取响应数据HTML，根据HTML的语法对其进行格式化，并在浏览器窗口中显示。
+特点：
+　基于 请求-响应 的模式
+　　无状态保存
+　　无连接
+Http请求方法(8种)
+GET GET提交的数据会放在URL之后，也就是请求行里面，以?分割URL和传输数据，参数之间以&相连
+POST POST方法是把提交的数据放在HTTP包的请求体中.
+HEAD
+PUT
+DELETE
+TRACE
+OPTIONS
+CONNECT
+常用响应头
+Content-Encoding：服务器通过这个头告诉浏览器数据的压缩格式。
+Content-Length：服务器通过这个头告诉浏览器回送数据的长度
+Content-Type：服务器通过这个头告诉浏览器回送数据的类型
+Last-Modified：告诉浏览器当前资源的最后缓存时间
+Refresh：告诉浏览器隔多久刷新一次
+常用请求头
+Accept：用于高速服务器，客户机支持的数据类型
+Accept-Charset：用于告诉服务器，客户机采用的编码格式
+Accept-Encoding：用于告诉服务器，客户机支持的数据压缩格式
+Accept-Language：客户机的语言环境
+Host：客户机通过这个头高速服务器，想访问的主机名
+Referer：客户机通过这个头告诉服务器，它是从哪个资源来访问服务器的（防盗链）
+User-Agent：客户机通过这个头告诉服务器，客户机的软件环境
+Cookie：客户机通过这个头可以向服务器带数据
+Connection：处理完这次请求后是否断开连接还是继续保持连接
+Date：当前时间值
+
+HTTP状态码
+1xx消息——请求已被服务器接收，继续处理
+2xx成功——请求已成功被服务器接收、理解、并接受
+3xx重定向——需要后续操作才能完成这一请求
+4xx请求错误——请求含有词法错误或者无法被执行
+5xx服务器错误——服务器在处理某个正确请求时发生错误
+```
+
+### 6.动态代理
+
+![img](file:///C:\Users\meng\Documents\Tencent Files\843544182\Image\C2C\I96@GK8I_ASH4X8777EZHP7.png)
+
+![img](file:///C:\Users\meng\Documents\Tencent Files\843544182\Image\C2C\$I@0@YI~F4HBCBI5($Z4`(2.png)
+
+### 7.nginx
+
+Nginx(enginex)是一个高性能的HTTP和反向代理服务
+
+动静分离，负载均衡
+
+#### 动静分离
+
+配置文件nginx.conf
+
+```
+在我们的软件开发中，有些请求是需要后台处理的（如：.jsp,.do 等等），有些请求是不需要经过后台处理的（如：css、html、jpg、js 等等文件），这些不需要经过后台处理的文件称为静态文件
+```
+
+```
+语法规则： location [=|~|~*|^~] /uri/ { … }
+
+=  开头表示精确匹配
+
+^~  开头表示uri以某个常规字符串开头，理解为匹配 url路径即可。nginx不对url做编码，因此请求为/static/20%/aa，可以被规则^~ /static/ /aa匹配到（注意是空格）。以xx开头
+
+~  开头表示区分大小写的正则匹配                     以xx结尾
+
+~* 开头表示不区分大小写的正则匹配                以xx结尾
+
+!~和!~*分别为区分大小写不匹配及不区分大小写不匹配 的正则
+
+/ 通用匹配，任何请求都会匹配到。
+```
+
+首先精确匹配 =-》其次以xx开头匹配^~-》然后是按文件中顺序的正则匹配-》最后是交给 / 通用匹配。
+
+当有匹配成功时候，停止匹配，按当前匹配规则处理请求
+
+#### 负载均衡
+
+1.轮询：nginx默认就是轮询其权重都默认为1，服务器处理请求的顺序：ABABABABAB....
+
+```
+upstream mysvr { 
+    server 127.0.0.1:7878;
+    server 192.168.10.121:3333;       
+}
+```
+
+2.ip_hash:nginx会让相同的客户端ip请求相同的服务器。
+
+```
+upstream mysvr { 
+    server 127.0.0.1:7878; 
+    server 192.168.10.121:3333;
+    ip_hash;
+}
+```
+
+3. fair 按后端服务器的响应时间来分配请求，响应时间短的优先分配。
+
+```
+upstream backserver {
+    server server1;
+    server server2;
+    fair;
+}
+```
+
+4.url_hash 按访问url的hash结果来分配请求，使每个url定向到同一个后端服务器，后端服务器为缓存时比较有效。
+
+```
+upstream backserver {
+    server squid1:3128;
+    server squid2:3128;
+    hash $request_uri;
+    hash_method crc32;
+}123456
+```
+
+配置实例
+
+```
+#user  nobody;
+worker_processes  4;
+events {
+    # 最大并发数
+    worker_connections  1024;
+}
+http{
+    # 待选服务器列表
+    upstream myproject{
+        # ip_hash指令，将同一用户引入同一服务器。
+        ip_hash;
+        server 125.219.42.4 fail_timeout=60s;
+        server 172.31.2.183;
+        }
+
+    server{
+                # 监听端口
+                listen 80;
+                # 根目录下
+                location / {
+                    # 选择哪个服务器列表
+                    proxy_pass http://myproject;
+                }
+
+            }
+}
+```
+
+
+
+### 8.多线程
+
+#### 创建线程的几种方式
+
+```
+1.继承Thread类创建线程类
+2.通过Runnable接口创建线程类
+3.通过Callable和Future创建线程(创建Callable接口的实现类，并实现call()方法，该call()方法将作为线程执行体，并且有返回值)
+4.通过线程池
+```
+
+#### 线程有哪些状态
+
+![image-20210415162948047](C:\Users\meng\AppData\Roaming\Typora\typora-user-images\image-20210415162948047.png)
+
+#### **sleep() 和 wait() 有什么区别**
+
+```
+方法是线程类（Thread）的静态方法，让调用线程进入睡眠状态，让出执行机会给其他线程，等到休眠时间结束后，线程进入就绪状态和其他线程一起竞争cpu的执行时间，不释放锁
+
+wait()是Object类的方法，当一个线程执行到wait方法时，它就进入到一个和该对象相关的等待池，同时释放对象的机锁，使得其他线程能够访问，可以通过notify，notifyAll方法来唤醒等待的线程
+```
+
+#### **创建线程池有哪几种方式**
+
+```
+ 1.newFixedThreadPool(int nThreads)
+ 创建一个固定长度的线程池，每当提交一个任务就创建一个线程，直到达到线程池的最大数量，这时线程规模将不再变化，当线程发生未预期的错误而结束时，线程池会补充一个新的线程。
+ 2.newCachedThreadPool()
+ 创建一个可缓存的线程池，如果线程池的规模超过了处理需求，将自动回收空闲线程，而当需求增加时，则可以自动添加新线程，线程池的规模不存在任何限制。
+ 3.newSingleThreadExecutor()
+ 这是一个单线程的Executor，它创建单个工作线程来执行任务，如果这个线程异常结束，会创建一个新的来替  代它；它的特点是能确保依照任务在队列中的顺序来串行执行。
+ 4.newScheduledThreadPool(int corePoolSize)
+ 创建了一个固定长度的线程池，而且以延迟或定时的方式来执行任务，类似于Timer。
+```
+
+#### 读写锁：
+
+```
+ private ReentrantReadWriteLock lock =  new ReentrantReadWriteLock();
+ 读锁： lock.readLock().lock() 关闭 lock.readLock().unlock();
+ 写锁： lock.writeLock().lock() 关闭 lock.writeLock().unlock();
+```
+
+#### 线程池中的重要参数
+
+```
+corePoolSize ：核心线程数量
+maximumPoolSize ：线程最大线程数
+workQueue ：阻塞队列，存储等待执行的任务 很重要 会对线程池运行产生重大影响
+keepAliveTime ：线程没有任务时最多保持多久时间终止 超时时间
+unit ：keepAliveTime的时间单位 超时单位
+threadFactory ：线程工厂，用来创建线程
+rejectHandler ：当拒绝处理任务时的策略 (丢弃抛异常，只丢弃不抛异常，喜新厌旧，不丢弃直接等待后进入线程执行)
+```
+
+![img](https://img-blog.csdnimg.cn/20191222132834705.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2ppYWhhbzExODY=,size_16,color_FFFFFF,t_70)
+
+#### 同步工具类
+
+##### 1.Semaphore使用 信号灯
+
+一、多个共享资源互斥使用
+二、线程并发数的控制
+
+```
+ Semaphore semaphore = new Semaphore(2);
+ semaphore.acquire();//获取执行许可
+ semaphore.release();//归还许可
+```
+
+##### 2.CountDownLatch 计数器
+
+```
+final CountDownLatch cdOrder = new CountDownLatch(3);
+cdOrder.await();//当计数器3个全用了就向下执行
+cdAnswer.countDown()进行计数器减一，当减到0的时候可以执行上面的.await
+```
+
+##### 3.Exchanger
+
+```
+可以交互线程之间的数据，经过测试，线程数量必须是偶数，也就是成对儿出现,否则 将会有一个线程不能交换数据，至于交换规则经过测试没有规律。随机的。
+final Exchanger<String> exchanger = new Exchanger<String>();
+String data1 = Thread.currentThread().getName() + Math.random() * 10000;
+String data2 = (String) exchanger.exchange(data1);
+```
+
+##### 4.CyclicBarrier  可以控制一组线程到达某个点
+
+```
+final CyclicBarrier cb = new CyclicBarrier(3);
+cb.await();
+```
+
+### 9.JVM
+
+![img](https://imgconvert.csdnimg.cn/aHR0cHM6Ly91c2VyLWdvbGQtY2RuLnhpdHUuaW8vMjAxNy85LzQvZGE3N2Q5MDE0Njc4NmMwY2IzZTE3MGI5YzkzNzZhZTQ_aW1hZ2VWaWV3Mi8wL3cvMTI4MC9oLzk2MC9mb3JtYXQvd2VicC9pZ25vcmUtZXJyb3IvMQ)
+
+#### jvm类加载机制
+
+```
+双亲委派机制
+启动类加载器 bootstrap ClassLoader 负责加载核心类库 rt.jar
+扩展类加载器 Extension ClassLoader 主要负载加载jre/lib/ext下的jar包
+应用程序类加载器 Application ClassLoader
+自定义类加载器 user ClassLoader
+好处：避免重复加载 + 避免核心类篡改
+```
+
+#### jvm类加载过程
+
+![Java JVM类加载顺序](http://www.51gjie.com/Images/image1/4qn35tyx.kpx.jpg)
+
+```
+第一步加载：查找和导入类或接口的二进制数据；
+第二步链接：执行下面的校验、准备和解析步骤，其中解析步骤是可以选择的；
+第三步校验：检查导入类或接口的二进制数据的正确性；
+第四步准备：给类的静态变量分配并初始化存储空间；
+第五步解析：将符号引用转成直接引用；
+第六步初始化：激活类的静态变量的初始化Java代码和静态Java代码块。 
+```
+
+#### jvm堆大小的设置
+
+```
+-Xmx：最大堆大小
+-Xms：最小堆大小
+-Xmn:年轻代大小
+-XXSurvivorRatio：年轻代中Eden区与Survivor区的大小比值
+```
+
+#### jvm调优命令
+
+```
+1.jps命令用于查询正在运行的JVM进程
+2.jstat可以实时显示本地或远程JVM进程中类装载、内存、垃圾收集、JIT编译等数据
+/home/tools/jdk1.8.0_181/bin/jstat -gcutil 30386（java进程号） 2000
+3.jmap用于显示当前Java堆和永久代的详细信息
+4.jstack用于生成当前JVM的所有线程快照，线程快照是虚拟机每一条线程正在执行的方法,目的是定位线程出现长时间停顿的原因。
+```
+
+#### GC回收机制
+
+![在这里插入图片描述](https://img-blog.csdnimg.cn/2020052418491075.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80NTYwODg0OQ==,size_16,color_FFFFFF,t_70)
+
+幸存区的对象如果经过15次回收还没有回收掉，就会进入老年代，new的对象过大也会进入老年代
+
+### 10.redis分片
+
+集群要实现的目的是要将不同的 key 分散放置到不同的 redis 节点，这里我们需要一个规则或者算法，***\*通常的做法是获取 key 的哈希值，然后根据节点数来求模\**，**但这种做法有其明显的弊端，当**我们需要增加或减少一个节点时，会造成大量的 key 无法命中**，这种比例是相当高的，**所以就有人提出了一致性哈希的概念。**
+
+```
+Redis 集群没有使用一致性hash, 而是引入了哈希槽的概念。
+
+Redis集群有16384个哈希槽，每个key通过CRC16校验后对16384取模来决定放置哪个槽(Slot)，集群的每个节点负责一部分hash槽。
+
+这种结构很容易添加或者删除节点，并且无论是添加删除或者修改某一个节点，都不会造成集群不可用的状态。
+使用哈希槽的好处就在于可以方便的添加或移除节点。
+
+当需要增加节点时，只需要把其他节点的某些哈希槽挪到新节点就可以了；
+当需要移除节点时，只需要把移除节点上的哈希槽挪到其他节点就行了；
+在这一点上，我们以后新增或移除节点的时候不用先停掉所有的 redis 服务。
+```
+
+### 11.redis持久化方式
+
+Redis是一个支持持久化的内存数据库，也就是说redis需要经常将内存中的数据同步到磁盘来保证持久化。redis支持四种持久化方式，一是 Snapshotting（快照）也是默认方式；二是Append-only file（缩写aof）的方式；三是虚拟内存方式；四是diskstore方式。下面分别介绍之。
+
+（一）Snapshotting
+
+       快照是默认的持久化方式。这种方式是就是将内存中数据以快照的方式写入到二进制文件中,默认的文件名为dump.rdb。可以通过配置设置自动做快照持久化的方式。我们可以配置redis在n秒内如果超过m个key被修改就自动做快照，下面是默认的快照保存配置：
+
+save 900 1  #900秒内如果超过1个key被修改，则发起快照保存
+save 300 10 #300秒内容如超过10个key被修改，则发起快照保存
+save 60 10000
+
+
+快照保存过程：
+
+       1. redis调用fork,现在有了子进程和父进程。
+       2. 父进程继续处理client请求，子进程负责将内存内容写入到临时文件。由于os的写时复制机制（copy on write)父子进程会共享相同的物理页面，当父进程处理写请求时os会为父进程要修改的页面创建副本，而不是写共享的页面。所以子进程的地址空间内的数据是fork时刻整个数据库的一个快照。
+       3. 当子进程将快照写入临时文件完毕后，用临时文件替换原来的快照文件，然后子进程退出（fork一个进程入内在也被复制了，即内存会是原来的两倍）。
+    
+       client 也可以使用save或者bgsave命令通知redis做一次快照持久化。save操作是在主线程中保存快照的，由于redis是用一个主线程来处理所有 client的请求，这种方式会阻塞所有client请求。所以不推荐使用。另一点需要注意的是，每次快照持久化都是将内存数据完整写入到磁盘一次，并不是增量的只同步脏数据。如果数据量大的话，而且写操作比较多，必然会引起大量的磁盘io操作，可能会严重影响性能。
+       另外由于快照方式是在一定间隔时间做一次的，所以如果redis意外down掉的话，就会丢失最后一次快照后的所有修改。如果应用要求不能丢失任何修改的话，可以采用aof持久化方式。下面介绍：
+
+（二）Append-only file
+
+aof 比快照方式有更好的持久化性，是由于在使用aof持久化方式时，redis会将每一个收到的写命令都通过write函数追加到文件中(默认是appendonly.aof)。当redis重启时会通过重新执行文件中保存的写命令来在内存中重建整个数据库的内容。当然由于os会在内核中缓存 write做的修改，所以可能不是立即写到磁盘上。这样aof方式的持久化也还是有可能会丢失部分修改。不过我们可以通过配置文件告诉redis我们想要通过fsync函数强制os写入到磁盘的时机。有三种方式如下（默认是：每秒fsync一次）：
+
+```
+    appendonly yes           #启用aof持久化方式
+
+    appendfsync always   #每次收到写命令就立即强制写入磁盘，最慢的，但是保证完全的持久化，不推荐使用
+    appendfsync everysec     #每秒钟强制写入磁盘一次，在性能和持久化方面做了很好的折中，推荐
+
+    appendfsync no    #完全依赖os，性能最好,持久化没保证
+```
+
+### 12.索引和数据库优化
+
+#### 数据库优化
+
+```
+1优化sql语句
+2.创建索引
+3.添加缓存
+4.使用数据库的读写分离
+读写分离就是主从集群，一主多从，或者一主一从，就是根据数据库主机复制写入操作，从机负责读的操作，主机写入以后在同步给从机。基本原理就是将数据库的读写操作分配到不同的节点，根据主从复制集群的特性进行扩展开发。
+5.定期将历史数据进行转储
+6.进行分库分表(最后策略，最有效的策略)
+```
+
+```
+sql语句优化
+1.对查询进行优化，应尽量避免全表扫描，首先应考虑在 where 及 order by 涉及的列上建立索引。
+
+2.应尽量避免在 where 子句中使用!=或<>操作符，否则将引擎放弃使用索引而进行全表扫描。
+
+3.应尽量避免在 where 子句中对字段进行 null 值判断，否则将导致引擎放弃使用索引而进行全表扫描，如：
+
+select id from t where num is null
+
+可以在num上设置默认值0，确保表中num列没有null值，然后这样查询：
+
+select id from t where num=0
+
+4.应尽量避免在 where 子句中使用 or 来连接条件，否则将导致引擎放弃使用索引而进行全表扫描，如：
+
+select id from t where num=10 or num=20
+
+可以这样查询：
+
+select id from t where num=10
+
+union all
+
+select id from t where num=20
+
+5.下面的查询也将导致全表扫描：
+
+select id from t where name like '%abc%'
+
+若要提高效率，可以考虑全文检索。
+
+6.in 和 not in 也要慎用，否则会导致全表扫描，如：
+
+select id from t where num in(1,2,3)
+
+对于连续的数值，能用 between 就不要用 in 了：
+
+select id from t where num between 1 and 3
+```
+
+
+
+#### 数据库三范式是什么
+
+```
+1.第一范式（1NF）：强调的是列的原子性，即列不能够再分成其他几列。
+2.第二范式（2NF）：首先是 1NF，另外包含两部分内容，一是表必须有一个主键；二是没有包含在主键中的列必须完全依赖于主键，而不能只依赖于主键的一部分。
+3.第三范式（3NF）：首先是 2NF，另外非主键列必须直接依赖于主键，不能存在传递依赖。即不能存在：非主键列 A 依赖于非主键列 B，非主键列 B 依赖于主键的情况
+```
+
+#### 索引
+
+```
+数据库索引好比是一本书前面的目录，能加快数据库的查询速度。索引是对数据库表中一个或多个列的值进行排序的结构
+优点：1.大大加快数据的检索速度;
+2.创建唯一性索引，保证数据库表中每一行数据的唯一性;
+3.加速表和表之间的连接;
+4.在使用分组和排序子句进行数据检索时，可以显著减少查询中分组和排序的时间。
+缺点：1.索引需要占用数据表以外的物理存储空间
+2.创建索引和维护索引要花费一定的时间
+3.当对表进行更新操作时，索引需要被重建，这样降低了数据的维护速度。
+```
+
+##### 索引类型
+
+```
+唯一索引： UNIQUE 例如：create unique index stusno on student（sno）表明此索引的每一个索引值只对应唯一的数据记录
+主键索引： primary key 数据库表经常有一列或列组合，其值唯一标识表中的每一行。该列称为表的主键
+聚集索引（也叫聚簇索引）：cluster 在聚集索引中，表中行的物理顺序与键值的逻辑（索引）顺序相同。一个表只能包含一个聚集索引。 如果某索引不是聚集索引，则表中行的物理顺序与键值的逻辑顺序不匹配。与非聚集索引相比，聚集索引通常提供更快的数据访问速度。
+```
+
+### 13.mybatis
+
+配置文件标签
+
+	select insert delete update 
+	if  foreach  where  set  trim 
+	sql	resultMap id 
+	association  多对一标签
+	collection 一对多标签
+多对一
+
+```xml
+<!-- 建立对应关系 --> <resultMap type="account" id="accountMap"> <id column="aid" property="id"/>
+<result column="uid" property="uid"/>
+<result column="money" property="money"/>
+<!-- 它是用于指定从表方的引用实体属性的 --> <association property="user" javaType="user"> <id column="id" property="id"/>
+<result column="username" property="username"/>
+<result column="sex" property="sex"/>
+<result column="birthday" property="birthday"/>
+<result column="address" property="address"/>
+</association>
+</resultMap>
+```
+
+### 14.zookeeper集群配置
+
+```
+　　zookeeper 集群通常是用来对用户的分布式应用程序提供协调服务的，为了保证数据的一致性，对 zookeeper 集群进行了这样三种角色划分：leader、follower、observer分别对应着总统、议员和观察者。
+
+　　总统（leader）：负责进行投票的发起和决议，更新系统状态。
+
+　　议员（follower）：用于接收客户端请求并向客户端返回结果以及在选举过程中参与投票。
+
+　　观察者（observer）：也可以接收客户端连接，将写请求转发给leader节点，但是不参与投票过程，只同步leader的状态。通常对查询操作做负载。
+
+
+```
+
+![img](https://img2018.cnblogs.com/blog/1120165/201810/1120165-20181027123636869-436165376.png)
+
+```
+上面红色框住的内容即是我们修改的内容：
+
+　　①、tickTime：基本事件单元，这个时间是作为Zookeeper服务器之间或客户端与服务器之间维持心跳的时间间隔，每隔tickTime时间就会发送一个心跳；最小 的session过期时间为2倍tickTime
+
+　　②、dataDir：存储内存中数据库快照的位置，除非另有说明，否则指向数据库更新的事务日志。注意：应该谨慎的选择日志存放的位置，使用专用的日志存储设备能够大大提高系统的性能，如果将日志存储在比较繁忙的存储设备上，那么将会很大程度上影像系统性能。
+
+　　③、client：监听客户端连接的端口。
+
+　　④、initLimit：允许follower连接并同步到Leader的初始化连接时间，以tickTime为单位。当初始化连接时间超过该值，则表示连接失败。
+
+　　⑤、syncLimit：表示Leader与Follower之间发送消息时，请求和应答时间长度。如果follower在设置时间内不能与leader通信，那么此follower将会被丢弃。
+
+　　⑥、server.A=B:C:D
+
+　　　　A：其中 A 是一个数字，表示这个是服务器的编号；
+
+　　　　B：是这个服务器的 ip 地址；
+
+　　　　C：Leader选举的端口；
+
+　　　　D：Zookeeper服务器之间的通信端口。
+
+　　我们需要修改的第一个是 dataDir ,在指定的位置处创建好目录。
+
+　　第二个需要新增的是 server.A=B:C:D 配置，其中 A 对应下面我们即将介绍的myid 文件。B是集群的各个IP地址，C:D 是端口配置。
+```
+
+### 15.linux常用命令
+
+进入目录                                                                               cd   
+
+设置权限                                                                               chmod   
+
+添加用户                                                                               useradd  
+
+切换用户                                                                               su 用户名
+​文件重复名                                                                           mv  
+
+查看                                                                                      ll ls  
+
+查看当前路径                                                                       pwd
+复制文件                                                                               cp
+​删除文件                                                                               rm -rf   
+
+查看进程号                                                                           ps-ef |gref   
+
+杀死进程                                                                               kill -9	  
+​保存退出:                                                                              wq 
+
+创建文件夹                                                                           mkdir  
+
+删除文件夹                                                                           rmdir
+​查看日志                                                                               tail head cat
+​解压                                                                                       tar -zxvf archive.tar.gz
+​查看磁盘空间大小                                                                df-lh
+
+### 16.mq使用场景
+
+​	[MQ的使用场景](https://blog.csdn.net/vincent_wen0766/article/details/113099967)	阿里代码注释规约
+
+​	**MQ 可以用来实现削峰填谷**，也就是使用它可以解决短时间内爆发式的请求任务，在不使用 MQ 的情况下会导致服务处理不过来，出现应用程序假死的情况，而使用了 MQ 之后可以把这些请求先暂存到消息队列中，然后进行排队执行 
+
+​	**使用 MQ 实现消息通讯**
+
+使用 MQ 可以作为消息通讯的实现手段，利用它可以实现**点对点的通讯或者多对多的聊天室功能**
+
+​	**使用 MQ 实现日志系统**
+
+可使用 MQ 实现**对日志的采集和转发**，比如有多个日志写入到程序中，然后把日志添加到 MQ，紧接着由日志处理系统订阅 MQ，最后 MQ 将消息接收并转发给日志处理系统，这样就完成了日志的分析和保存功能
+
+​	异步化 提高并发

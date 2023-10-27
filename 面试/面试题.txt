@@ -1,0 +1,7 @@
+1、string的几个方法 string可以被继承吗？为什么？
+2、linux的常用指令都有哪些
+3、说说你的项目，里面用到了什么东西，主要是做什么的，mysql数据库和redis的关系
+4、spring的ioc和aop，springmvc执行流程
+5、ajax的同步和异步有什么区别
+6、怎么启动nginx
+7、用了什么数据库

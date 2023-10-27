@@ -1,0 +1,10 @@
+1、多线程的4种创建方式
+2、线程的生命周期（5个  新建，就绪，运行，阻塞，死亡）
+3，CAS(自旋)，ABA问题（AtomicStampedReference）
+4、countdownlatch和cyclicbarrier的区别
+5、读写锁 ReadWriteLock rwl=new ReentrantReadWriteLock(); rwl.readlock.lock(); rwl.readLock().unlock(); rwl.writeLock().lock();rwl.writeLock().unlock();
+6、信号灯（可以控制同时访问资源的线程数量）获取灯：sp.acquire()；释放灯:sp.release();
+7、volatile 修饰变量的关键字，可见性
+8、4种线程池 newsinglethreadexecutor，newfiexdthreadpool，newcachedthreadpool，newschedulethreadpool
+9、自定义线程池的7个参数 核心线程池数量，最大核心线程池数量，超时时间，超时单位，阻塞队列，线程工厂，拒绝策略(4中，丢弃抛异常，只丢弃不抛异常，喜新厌旧，不丢弃直接等待后进入线程执行)
+
